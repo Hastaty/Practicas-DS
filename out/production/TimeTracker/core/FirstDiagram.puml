@@ -1,0 +1,155 @@
+@startuml
+package core{
+    class Task
+    class Interval
+    class Project
+    abstract class Activity
+    class Application
+    ' interface UserInterface
+    class Clock
+
+    package java.util{
+        class Observable
+        {
+            + setChanged():boolean
+            + notifyObservers(Object arg):void
+        }
+        interface Observer
+        {
+            + {abstract}update(Observable o, Object arg):void
+        }
+        }
+    package java.time{
+           class LocalDateTime
+           class Duration
+           class DateTimeFormatter
+           class Timer
+        }
+    package org.json{
+        class JSONObject
+        class JSONArray
+        class JSONTokener
+        class FileWriter
+    }
+    enum timePeriods{
+        DAILY: int=0
+        MONTHLY: int=1
+        YEARLY: int=2
+        ALL:int=3
+    }
+    interface Visitor
+    class InfoPrinter
+    class JSONWriter
+    abstract Searcher
+    class SearcherByTag
+    class SearcherByName
+}
+
+interface Visitor{
+    +{abstract}visit(task:Task):void
+    +{abstract}visit(project:Project):void
+    +{abstract}visit(interval:Interval):void
+}
+
+class InfoPrinter{
+    +visit(task:Task):void
+    +visit(project:Project):void
+    +visit(interval:Interval):void
+}
+class JSONWriter{
+    - jsonArray:JSONArray
+    +visit(task:Task):void
+    +visit(project:Project):void
+    +visit(interval:Interval):void
+}
+abstract class Searcher{
+    - correspondingObj:List<Activity>
+    +{abstract}visit(task:Task):void
+    +{abstract}visit(project:Project):void
+    +{abstract}visit(interval:Interval):void
+}
+class SearcherByName{
+    - name:String
+    +visit(task:Task):void
+    +visit(project:Project):void
+    +visit(interval:Interval):void
+}
+class SearcherByTag{
+    - tag:String
+    +visit(task:Task):void
+    +visit(project:Project):void
+    +visit(interval:Interval):void
+}
+abstract Activity{
+    - name: String
+    -tag: String
+    - initalDateTime: LocalDateTime
+    - finalDateTime: LocalDateTime
+    - duration: Duration
+    - active : boolean
+    - parentProject:Project
+    + {abstract}printInfo():void
+    + {abstract}recalculateTimes():void
+    + {abstract}calculateDuration(): void
+     +{abstract}accept(visitor:Visitor);
+}
+class Application{
+    + TotalTimeSpent(activity: Activity,period: int ):LocalDateTime
+    + {static}buildTreeFromJSON():void
+    + {static}writeJSON(): void
+    + {static}searchByTag(tag: String):List<Activity>
+    + {static}main(String[]: args):void
+    + {static}testCreateHierarchy():void
+    + {static}testClock():void
+}
+class Project{
+    + addActivity():void
+    + recalculateTimes():void
+    + TotalTimeSpent(activity: Activity,period: int ):LocalDateTime
+    + calculateDuration(): void
+    + accept(visitor:Visitor)
+}
+class Task{
+    -nIntervals:int
+    -lastUpdateDuration:Duration
+    + NotifyApplication():void
+    + startTask():void
+    + stopTask():void
+    + addInterval():void
+    + TotalTimeSpent(period: int ):LocalDateTime
+    + calculateDuration(): void
+    + accept(visitor:Visitor)
+}
+class Interval{
+    - parentTask: Task
+    - start : LocalDateTime
+    - end : LocalDateTime
+    - duration: Duration
+    + accept(visitor:Visitor)
+    + update(Observable o, Object arg):void
+}
+class Clock{
+    - {static}timer:Timer
+    - {static} clock:Clock
+    - tick(): void
+    + getInstance():Clock
+    +startTimer():void
+    +stopTimer():void
+}
+Application "1"<--> "1"Project: "rootProject"
+Project --|> Activity
+Project "1"*-->"*"Activity: "activities "
+Task --|> Activity
+Task "1"*-->"*"Interval:"intervals"
+Clock --|> Observable
+Interval ..|> Observer
+Visitor<|..InfoPrinter
+Visitor<|..JSONWriter
+Visitor<|..Searcher
+Searcher<|--SearcherByName
+Searcher<|--SearcherByTag
+
+
+
+
+@enduml
